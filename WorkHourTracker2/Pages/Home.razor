@@ -1,0 +1,74 @@
+﻿@page "/"
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<MudMainContent>
+    <MudGrid Justify="Justify.Center" Style="height: 100%; padding: 10px">
+        <MudItem xs="12" Class="d-flex justify-center align-center">
+            <MudText Typo="Typo.h4" Align="Align.Center">Hours Over/Under Today</MudText>
+        </MudItem>
+        <MudItem xs="12" Class="d-flex justify-center align-center">
+            <MudStack Row>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" Style="font-size:2rem;min-width:64px;min-height:64px;" OnClick="Decrement">-</MudButton>
+                <MudText Typo="Typo.h1" Align="Align.Center" Style="font-size:5rem;" Class="@(hours < 0 ? "text-red" : null)">@FormatHours(Math.Abs(hours))</MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" Style="font-size:2rem;min-width:64px;min-height:64px;" OnClick="Increment">+</MudButton>
+            </MudStack>
+        </MudItem>
+        <MudItem xs="12" Class="d-flex justify-center align-center">
+            <MudButton Size="Size.Large" Variant="Variant.Filled" Color="Color.Primary" OnClick="LogHours">Log Hours</MudButton>
+        </MudItem>
+        <MudItem xs="12" Class="d-flex justify-center align-center">
+            <MudText Typo="Typo.body1" Align="Align.Center">Total Over/Under:</MudText>
+            <MudText Typo="Typo.body1" Align="Align.Center" Inline Class="@(totalOverUnder < 0 ? "text-red" : null)"> <b>@FormatHours(Math.Abs(totalOverUnder))</b></MudText>
+        </MudItem>
+    </MudGrid>
+</MudMainContent>
+
+<style>
+    .text-red {
+        color: lightcoral !important;
+    }
+</style>
+
+@code {
+    private double hours = 0;
+    private const string HoursKey = "loggedHours";
+    private const string TotalKey = "totalOverUnder";
+    private double totalOverUnder = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var saved = await localStorage.GetItemAsync<double?>(HoursKey);
+        if (saved.HasValue)
+            hours = saved.Value;
+        var total = await localStorage.GetItemAsync<double?>(TotalKey);
+        if (total.HasValue)
+            totalOverUnder = total.Value;
+    }
+
+    private async Task Increment()
+    {
+        hours += 0.5;
+        await localStorage.SetItemAsync(HoursKey, hours);
+    }
+
+    private async Task Decrement()
+    {
+            hours -= 0.5;
+        await localStorage.SetItemAsync(HoursKey, hours);
+    }
+
+    private async Task LogHours()
+    {
+        totalOverUnder += hours;
+        await localStorage.SetItemAsync(TotalKey, totalOverUnder);
+        hours = 0;
+        await localStorage.SetItemAsync(HoursKey, hours);
+    }
+
+    private string FormatHours(double value)
+    {
+        int h = (int)value;
+        int m = (int)((value - h) * 60);
+        return $"{h}:{m:00}";
+    }
+}
